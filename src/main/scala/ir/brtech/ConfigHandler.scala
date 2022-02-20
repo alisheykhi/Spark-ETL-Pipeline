@@ -2,7 +2,7 @@ package ir.brtech
 
 import java.io.{File, FileNotFoundException, IOException}
 import org.ini4j.Wini
-import InternetAccessUsage.error
+import ETL.error
 
 class ConfigHandler(initFilePath: String,
                     sparkSession: String,
