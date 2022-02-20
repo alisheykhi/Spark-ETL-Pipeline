@@ -1,0 +1,28 @@
+properties([[$class: 'GitLabConnectionProperty', gitLabConnection: 'your-gitlab-connection-name']])
+node {
+   stage ('Preparation') {
+       gitlabCommitStatus(name: "Preparation") {
+            checkout scm
+        }}
+    stage ('Compiling') {
+        gitlabCommitStatus(name: "Compiling") {
+            sh "sbt 'set test in assembly := {}' assembly"
+        }}
+    stage ('Testing') {
+        gitlabCommitStatus(name: "Testing") {
+            sh "sbt test"
+        }}
+    stage ('Export Test') {
+        gitlabCommitStatus(name: "Export Test") {
+            step([$class: 'JUnitResultArchiver', testResults: 'target/test-reports/TEST-*.xml'])
+    }}
+    stage ('Publish To Repository') {
+        gitlabCommitStatus(name: "Publish To Repository") {
+            sh 'sbt publish'
+            withCredentials([usernamePassword(credentialsId: '70d5ec6e-9f8b-4124-a65d-21ae223a871a', passwordVariable: 'NEXUS_PASSWORD', usernameVariable: 'NEXUS_USERNAME')]) {
+            sh '''
+            curl --fail -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} --upload-file src/main/resources/your-conf-file nexus-repo-app/repository/MVN_JAR_HOSTED/ir/brtech/internetaccessusage_2.11/$(sbt 'show version' | tail -n1 | cut -d " " -f2)/ &&
+            curl --fail -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} --upload-file run_prod.sh http://nexus-repo-add/repository/MVN_JAR_HOSTED/ir/brtech/internetaccessusage_2.11/$(sbt 'show version' | tail -n1 | cut -d " " -f2)/
+            '''
+}}}
+}
