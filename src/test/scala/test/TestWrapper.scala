@@ -9,7 +9,7 @@ trait TestWrapper {
 
   val conf: SparkConf = new SparkConf()
     .setMaster("local")
-    .setAppName("InternetAccessUsageTest")
+    .setAppName("ETLTest")
     .set("spark.driver.allowMultipleContexts", "false")
     .set("spark.ui.enabled", "false")
     .set("spark.driver.memory", "2g")
@@ -30,24 +30,24 @@ trait TestWrapper {
       .load(path)
   }
 
-  lazy val pgwDf = readCSV("src/test/resources/PGW_NEW.CSV")
+  lazy val stream1Input = readCSV("path_to_input_file")
 
-  lazy val vgsDf = readCSV("src/test/resources/VGS.CSV")
+  lazy val stream2Input = readCSV("path_to_input_file")
 
-  lazy val pgwTargetDf = readCSV("src/test/resources/INTR_ACCS_USG_PGW.CSV")
+  lazy val stream1Expected = readCSV("path_to_expected_file")
 
-  lazy val vgsTargetDf = readCSV("src/test/resources/INTR_ACCS_USG_VGS.CSV")
+  lazy val stream2Expected = readCSV("path_to_expected_file")
 
   def getTransformedAndExpectedDf (etlObjectName: Column,
              targetColumnName: Column,
              columnType:String = "String",
-             streamName: String = "vgs")
+             streamName: String = "stream1")
   : (DataFrame,DataFrame) = {
     streamName match {
-      case "vgs" => (vgsDf.select(etlObjectName, col("RN")),
-        vgsTargetDf.select(targetColumnName.cast(columnType), col("RN")))
-      case  "pgw" => (pgwDf.select(etlObjectName, col("RN")),
-        pgwTargetDf.select(targetColumnName.cast(columnType), col("RN")))
+      case "stream1" => (stream2Input.select(etlObjectName, col("RN")),
+        stream2Expected.select(targetColumnName.cast(columnType), col("RN")))
+      case  "stream2" => (stream1Input.select(etlObjectName, col("RN")),
+        stream1Expected.select(targetColumnName.cast(columnType), col("RN")))
     }
   }
 }
